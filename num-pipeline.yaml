@@ -1,5 +1,10 @@
 # PIPELINE DEFINITION
-# Name: num-pipeline
+# Name: my-pipeline
+# Inputs:
+#    a: int [Default: 1.0]
+#    b: int [Default: 2.0]
+#    c: int [Default: 3.0]
+#    d: int [Default: 4.0]
 # Outputs:
 #    Output: int
 components:
@@ -15,8 +20,8 @@ components:
       parameters:
         Output:
           parameterType: NUMBER_INTEGER
-  comp-mul:
-    executorLabel: exec-mul
+  comp-multiply:
+    executorLabel: exec-multiply
     inputDefinitions:
       parameters:
         a:
@@ -67,15 +72,15 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef add(a: int, b: int) -> int:\n    return a+b\n\n"
+          \ *\n\ndef add(a: int, b: int) -> int:\n    return a + b\n\n"
         image: python:3.9
-    exec-mul:
+    exec-multiply:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - mul
+        - multiply
         command:
         - sh
         - -c
@@ -95,7 +100,7 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef mul(a: int, b: int) -> int:\n    return a*b\n\n"
+          \ *\n\ndef multiply(a: int, b: int) -> int:\n    return a * b\n\n"
         image: python:3.9
     exec-subtract:
       container:
@@ -123,10 +128,10 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef subtract(a: int, b: int) -> int:\n    return a-b\n\n"
+          \ *\n\ndef subtract(a: int, b: int) -> int:\n    return a - b\n\n"
         image: python:3.9
 pipelineInfo:
-  name: num-pipeline
+  name: my-pipeline
 root:
   dag:
     outputs:
@@ -134,7 +139,7 @@ root:
         Output:
           valueFromParameter:
             outputParameterKey: Output
-            producerSubtask: mul
+            producerSubtask: multiply
     tasks:
       add:
         cachingOptions:
@@ -144,18 +149,16 @@ root:
         inputs:
           parameters:
             a:
-              runtimeValue:
-                constant: 1.0
+              componentInputParameter: a
             b:
-              runtimeValue:
-                constant: 2.0
+              componentInputParameter: b
         taskInfo:
           name: add
-      mul:
+      multiply:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-mul
+          name: comp-multiply
         dependentTasks:
         - add
         - subtract
@@ -170,7 +173,7 @@ root:
                 outputParameterKey: Output
                 producerTask: subtract
         taskInfo:
-          name: mul
+          name: multiply
       subtract:
         cachingOptions:
           enableCache: true
@@ -179,13 +182,29 @@ root:
         inputs:
           parameters:
             a:
-              runtimeValue:
-                constant: 3.0
+              componentInputParameter: c
             b:
-              runtimeValue:
-                constant: 5.0
+              componentInputParameter: d
         taskInfo:
           name: subtract
+  inputDefinitions:
+    parameters:
+      a:
+        defaultValue: 1.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      b:
+        defaultValue: 2.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      c:
+        defaultValue: 3.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      d:
+        defaultValue: 4.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
   outputDefinitions:
     parameters:
       Output:
